@@ -85,7 +85,9 @@ func (m FileTreeModel) View() string {
 		if f.IsDir() {
 			name += "/"
 		}
-		sb.WriteString(prefix + name + "\n")
+		sb.WriteString(prefix)
+		sb.WriteString(name)
+		sb.WriteString("\n")
 	}
 
 	lines := strings.Split(sb.String(), "\n")
