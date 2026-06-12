@@ -109,7 +109,7 @@ func (m RightPaneModel) View() string {
 		taView,
 	)
 
-	return style.Width(innerW).Height(innerH).Render(content)
+	return style.Width(innerW).Height(innerH).MaxWidth(innerW + 4).MaxHeight(innerH + 2).Render(content)
 }
 
 func (m *RightPaneModel) SetSize(width, height int) {

@@ -2,7 +2,6 @@ package ui
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -32,11 +31,6 @@ type AppModel struct {
 	height int
 
 	rpcClient *rpc.PiRpcClient
-
-	models       []string
-	modelIndex   int
-	thinkingLvls []string
-	thinkingIdx  int
 }
 
 func NewApp() AppModel {
@@ -45,7 +39,7 @@ func NewApp() AppModel {
 
 	cmdStr := os.Getenv("PI_CMD")
 	if cmdStr == "" {
-		cmdStr = "go run ./cmd/mock-pi"
+		cmdStr = "pi --mode rpc --no-session"
 	}
 	parts := strings.Fields(cmdStr)
 
@@ -62,10 +56,6 @@ func NewApp() AppModel {
 		focusRight:   true,
 		showTree:     false,
 		rpcClient:    client,
-		models:       []string{"gemini-1.5-pro", "gemini-2.0-flash"},
-		modelIndex:   0,
-		thinkingLvls: []string{"none", "low", "high"},
-		thinkingIdx:  0,
 	}
 }
 
@@ -197,18 +187,6 @@ func (m *AppModel) handleKey(msg tea.KeyMsg) tea.Cmd {
 		return tea.ExecProcess(c, func(err error) tea.Msg {
 			return EditorFinishedMsg{File: f.Name(), Err: err}
 		})
-	case "f2":
-		m.modelIndex = (m.modelIndex + 1) % len(m.models)
-		m.rpcClient.SendCommand(rpc.Command{
-			Type: "set_model",
-			Payload: map[string]string{"model": m.models[m.modelIndex]},
-		})
-	case "shift+tab":
-		m.thinkingIdx = (m.thinkingIdx + 1) % len(m.thinkingLvls)
-		m.rpcClient.SendCommand(rpc.Command{
-			Type: "set_thinking",
-			Payload: map[string]string{"level": m.thinkingLvls[m.thinkingIdx]},
-		})
 	}
 	return nil
 }
@@ -261,19 +239,15 @@ func (m AppModel) View() string {
 	)
 	
 	footerText := m.footer.View()
-	statusText := lipgloss.NewStyle().
-		Background(CurrentTheme.FooterBg).
-		Foreground(CurrentTheme.FooterFg).
-		Render(fmt.Sprintf(" Model: %s | Thinking: %s ", m.models[m.modelIndex], m.thinkingLvls[m.thinkingIdx]))
 
-	availWidth := m.width - lipgloss.Width(footerText) - lipgloss.Width(statusText)
+	availWidth := m.width - lipgloss.Width(footerText)
 	if availWidth < 0 { 
 		availWidth = 0 
 	}
 	
 	filler := lipgloss.NewStyle().Background(CurrentTheme.FooterBg).Render(strings.Repeat(" ", availWidth))
 	
-	fullFooter := footerText + filler + statusText
+	fullFooter := footerText + filler
 	
 	return appBgStyle.Width(m.width).Height(m.height).Render(
 		lipgloss.JoinVertical(

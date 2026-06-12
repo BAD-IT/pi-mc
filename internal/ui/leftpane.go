@@ -198,7 +198,13 @@ func (m LeftPaneModel) View() string {
 		sb.WriteString(fmt.Sprintf("%s%s\n", prefix, name))
 	}
 
-	return style.Width(innerW).Height(innerH).Render(sb.String())
+	lines := strings.Split(sb.String(), "\n")
+	if len(lines) > innerH {
+		lines = lines[:innerH]
+	}
+	content := strings.Join(lines, "\n")
+
+	return style.Width(innerW).Height(innerH).MaxWidth(innerW + 4).MaxHeight(innerH + 2).Render(content)
 }
 
 func (m *LeftPaneModel) SetSize(width, height int) {

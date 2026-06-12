@@ -88,7 +88,13 @@ func (m FileTreeModel) View() string {
 		sb.WriteString(prefix + name + "\n")
 	}
 
-	return style.Width(innerW).Height(innerH).Render(sb.String())
+	lines := strings.Split(sb.String(), "\n")
+	if len(lines) > innerH {
+		lines = lines[:innerH]
+	}
+	content := strings.Join(lines, "\n")
+
+	return style.Width(innerW).Height(innerH).MaxWidth(innerW + 4).MaxHeight(innerH + 2).Render(content)
 }
 
 func (m *FileTreeModel) SetSize(width, height int) {
