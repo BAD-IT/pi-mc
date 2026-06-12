@@ -32,21 +32,21 @@ func (m FooterModel) View() string {
 		num   int
 		label string
 	}{
-		{1, "Queue"},
+		{1, "Help"},
 		{2, "Model"},
 		{3, "Steps"},
 		{4, "Sessions"},
-		{5, "Files"},
-		{6, "Tree"},
-		{7, "Vim"},
+		{5, "Tree"},
+		{6, "Convo"},
+		{7, "Search"},
 		{8, "Compact"},
-		{9, "Tasks"},
+		{9, "Menu"},
 		{10, "Quit"},
 	}
 
 	var sb strings.Builder
 	for _, k := range keys {
-		fkey := fKeyStyle.Render(fmt.Sprintf("%d", k.num))
+		fkey := fKeyStyle.Render(fmt.Sprintf("F%d", k.num))
 		label := fKeyLabelStyle.Render(k.label)
 		sb.WriteString(fkey)
 		sb.WriteString(label)
