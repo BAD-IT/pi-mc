@@ -48,7 +48,9 @@ func (m FooterModel) View() string {
 	for _, k := range keys {
 		fkey := fKeyStyle.Render(fmt.Sprintf("%d", k.num))
 		label := fKeyLabelStyle.Render(k.label)
-		sb.WriteString(fkey + label + " ")
+		sb.WriteString(fkey)
+		sb.WriteString(label)
+		sb.WriteString(" ")
 	}
 
 	return footerStyle.Width(m.width).Render(sb.String())
