@@ -203,8 +203,14 @@ func (m LeftPaneModel) View() string {
 		lines = lines[:innerH]
 	}
 	content := strings.Join(lines, "\n")
+	
+	// Apply inner constraints and explicit background to prevent bleed
+	content = lipgloss.NewStyle().
+		Background(CurrentTheme.Background).
+		MaxWidth(innerW).
+		Render(content)
 
-	return style.Width(innerW).Height(innerH).MaxWidth(innerW + 4).MaxHeight(innerH + 2).Render(content)
+	return style.Width(innerW).Height(innerH).Render(content)
 }
 
 func (m *LeftPaneModel) SetSize(width, height int) {

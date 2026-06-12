@@ -31,7 +31,12 @@ func NewPiRpcClient(binPath string, args ...string) (*PiRpcClient, error) {
 		return nil, fmt.Errorf("stdout pipe: %w", err)
 	}
 
-	cmd.Stderr = os.Stderr
+	logFile, err := os.OpenFile("pi-mc.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err == nil {
+		cmd.Stderr = logFile
+	} else {
+		cmd.Stderr = io.Discard
+	}
 	
 	return &PiRpcClient{
 		cmd:     cmd,
