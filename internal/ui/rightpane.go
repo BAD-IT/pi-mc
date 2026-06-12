@@ -6,22 +6,22 @@ import (
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 )
 
 type PromptMsg string
 
 type RightPaneModel struct {
-	viewport textarea.Model // Actually we use viewport.Model, see below
-	
 	vp       viewport.Model
 	ta       textarea.Model
+	renderer *glamour.TermRenderer
 	
 	width  int
 	height int
 	active bool
 	
-	messages             []string
+	messages             string
 	isAssistantStreaming bool
 }
 
@@ -30,8 +30,7 @@ func NewRightPane() RightPaneModel {
 	ta.Placeholder = "Type a message, Enter to send..."
 	ta.Focus()
 	ta.Prompt = "▸ "
-	ta.CharLimit = 1000
-	ta.SetWidth(30)
+	ta.CharLimit = 4000
 	ta.SetHeight(3)
 
 	ta.FocusedStyle.CursorLine = lipgloss.NewStyle()
@@ -39,10 +38,16 @@ func NewRightPane() RightPaneModel {
 
 	vp := viewport.New(30, 10)
 
+	r, _ := glamour.NewTermRenderer(
+		glamour.WithStandardStyle("dark"),
+		glamour.WithWordWrap(80),
+	)
+
 	return RightPaneModel{
-		ta:       ta,
+		messages: "Welcome to PI-mc.\n",
 		vp:       vp,
-		messages: []string{},
+		ta:       ta,
+		renderer: r,
 	}
 }
 
@@ -69,6 +74,8 @@ func (m RightPaneModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		}
+	case PromptMsg:
+		m.ta.Reset()
 	}
 
 	if m.active {
@@ -125,8 +132,6 @@ func (m *RightPaneModel) SetSize(width, height int) {
 		innerH = 0
 	}
 
-	m.ta.SetWidth(innerW)
-	
 	taHeight := 3
 	vpHeight := innerH - taHeight - 1
 	if vpHeight < 0 {
@@ -134,6 +139,15 @@ func (m *RightPaneModel) SetSize(width, height int) {
 	}
 
 	m.vp.Width = innerW
+	
+	// Update renderer word wrap and re-render
+	m.renderer, _ = glamour.NewTermRenderer(
+		glamour.WithStandardStyle("dark"),
+		glamour.WithWordWrap(innerW),
+	)
+	m.updateViewportContent()
+	
+	m.ta.SetWidth(innerW)
 	m.vp.Height = vpHeight
 }
 
@@ -146,20 +160,25 @@ func (m *RightPaneModel) SetActive(active bool) {
 	}
 }
 
+func (m *RightPaneModel) updateViewportContent() {
+	if m.renderer != nil {
+		out, err := m.renderer.Render(m.messages)
+		if err == nil {
+			m.vp.SetContent(out)
+			return
+		}
+	}
+	m.vp.SetContent(m.messages)
+}
+
 func (m *RightPaneModel) AddMessage(msg string) {
-	m.messages = append(m.messages, msg)
-	m.isAssistantStreaming = false
-	m.vp.SetContent(strings.Join(m.messages, "\n\n"))
+	m.messages += "\n" + msg + "\n"
+	m.updateViewportContent()
 	m.vp.GotoBottom()
 }
 
 func (m *RightPaneModel) AppendStream(chunk string) {
-	if !m.isAssistantStreaming {
-		m.messages = append(m.messages, "● pi: "+chunk)
-		m.isAssistantStreaming = true
-	} else {
-		m.messages[len(m.messages)-1] += chunk
-	}
-	m.vp.SetContent(strings.Join(m.messages, "\n\n"))
+	m.messages += chunk
+	m.updateViewportContent()
 	m.vp.GotoBottom()
 }
